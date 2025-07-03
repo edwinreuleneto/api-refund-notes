@@ -11,9 +11,9 @@ datasource db {
 // Files
 model Files {
   id        String @id @default(uuid())
-  name      String @unique
+  name      String
   extension String
-  baseUrl   String @map("base_url")
+  baseUrl   String @unique @map("base_url")
   folder    String
   file      String
   url       String

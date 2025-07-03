@@ -1,19 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { TaxCouponStatus } from '../tax-coupon-status.enum';
+import { TaxCouponStatus } from '../enum/tax-coupon-status.enum';
 
 export class TaxCouponResponseDto {
   @ApiProperty()
-  id: string;
+  id!: string;
 
   @ApiProperty({ enum: TaxCouponStatus })
-  status: TaxCouponStatus;
+  status!: TaxCouponStatus;
 
   @ApiProperty()
-  fileId: string;
+  fileId!: string;
 
   @ApiProperty()
-  createdAt: Date;
+  createdAt!: Date;
 
   @ApiProperty()
-  updatedAt: Date;
+  updatedAt?: Date;
 }

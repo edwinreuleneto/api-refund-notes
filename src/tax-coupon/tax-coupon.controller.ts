@@ -1,6 +1,18 @@
 // Dependencies
-import { Controller, Post, UseInterceptors, UploadedFile, Logger } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBody, ApiCreatedResponse } from '@nestjs/swagger';
+import {
+  Controller,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  Logger,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBody,
+  ApiCreatedResponse,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 // Services
@@ -18,12 +30,13 @@ export class TaxCouponController {
 
   @Post()
   @ApiOperation({ summary: 'Upload tax coupon file' })
+  @ApiConsumes('multipart/form-data')
   @ApiBody({ type: CreateTaxCouponDto })
   @ApiCreatedResponse({ type: TaxCouponResponseDto })
   @UseInterceptors(FileInterceptor('file'))
-  async create(@UploadedFile() file: Express.Multer.File): Promise<TaxCouponResponseDto> {
+  async create(@UploadedFile() file: Express.Multer.File) {
     try {
-      return await this.taxCouponService.create(file);
+      return this.taxCouponService.create(file);
     } catch (error) {
       this.logger.error('Failed to create tax coupon', error as Error);
       throw error;

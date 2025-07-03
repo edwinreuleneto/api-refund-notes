@@ -5,6 +5,8 @@ import { Queue } from 'bullmq';
 // DTO
 import { FilesService } from '../files/files.service';
 import { PrismaService } from '../prisma/prisma.service';
+
+// Module
 import { TAX_COUPON_QUEUE } from '../queue/queue.module';
 
 @Injectable()
@@ -20,6 +22,7 @@ export class TaxCouponService {
     try {
       const fileData = await this.filesService.upload(file);
       const savedFile = await this.prisma.files.create({ data: fileData });
+
       const taxCoupon = await this.prisma.taxCoupon.create({
         data: { fileId: savedFile.id },
       });

@@ -1,24 +1,39 @@
+// Dependencies
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateFileDto {
-  @ApiProperty()
-  name: string;
+  @ApiProperty({
+    type: 'string',
+  })
+  name!: string;
 
-  @ApiProperty()
-  extension: string;
+  @ApiProperty({
+    type: 'string',
+  })
+  extension!: string;
 
-  @ApiProperty()
-  baseUrl: string;
+  @ApiProperty({
+    type: 'string',
+  })
+  baseUrl!: string;
 
-  @ApiProperty()
-  folder: string;
+  @ApiProperty({
+    type: 'string',
+  })
+  folder!: string;
 
-  @ApiProperty()
-  file: string;
+  @ApiProperty({
+    type: 'string',
+  })
+  file!: string;
 
-  @ApiProperty()
-  url: string;
+  @ApiProperty({
+    type: 'string',
+  })
+  url!: string;
 
-  @ApiProperty()
-  size: number;
+  @ApiProperty({
+    type: 'number',
+  })
+  size!: number;
 }
