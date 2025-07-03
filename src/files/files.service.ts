@@ -1,8 +1,8 @@
 // Dependencies
 import { Injectable, Logger } from '@nestjs/common';
-import { promises as fs } from 'fs';
-import { join, extname } from 'path';
+import { extname } from 'path';
 import * as crypto from 'crypto';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
 // DTO
 import { CreateFileDto } from './dto/create-file.dto';
@@ -10,35 +10,42 @@ import { CreateFileDto } from './dto/create-file.dto';
 @Injectable()
 export class FilesService {
   private readonly logger = new Logger(FilesService.name);
+  private readonly s3 = new S3Client({
+    region: process.env.AWS_REGION ?? 'region',
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? '',
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? '',
+    },
+  });
+
   async upload(file: Express.Multer.File): Promise<CreateFileDto> {
     try {
       const bucket = process.env.AWS_ACCESS_BUCKET ?? 'bucket';
-      const region = process.env.AWS_REGION ?? 'region';
       const folder = process.env.S3_FOLDER ?? 'cupons';
+      const region = this.s3.config.region as string;
       const baseUrl = `https://${bucket}.s3.${region}.amazonaws.com`;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       const key = `${crypto.randomUUID()}-${file.originalname}`;
-      const uploadPath = join(process.cwd(), 'uploads', folder, key);
+      const s3Key = `${folder}/${key}`;
 
-      await fs.mkdir(join(process.cwd(), 'uploads', folder), {
-        recursive: true,
-      });
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
-      await fs.writeFile(uploadPath, file.buffer);
+      await this.s3.send(
+        new PutObjectCommand({
+          Bucket: bucket,
+          Key: s3Key,
+          Body: file.buffer,
+          ContentType: file.mimetype,
+        }),
+      );
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
       const extension = extname(file.originalname).replace('.', '');
-      const url = `${baseUrl}/${folder}/${key}`;
+      const url = `${baseUrl}/${s3Key}`;
 
       return {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         name: file.originalname || 'unknown',
         extension,
         baseUrl,
         folder,
         file: key,
         url,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
         size: file.size,
       };
     } catch (error: unknown) {
