@@ -45,4 +45,18 @@ export class TaxCouponService {
       throw error;
     }
   }
+
+  async getById(id: string) {
+    try {
+      return await this.prisma.taxCoupon.findUnique({
+        where: { id },
+        include: {
+          ai: { orderBy: { createdAt: 'desc' }, take: 1 },
+        },
+      });
+    } catch (error) {
+      this.logger.error('Failed to get tax coupon', error as Error);
+      throw error;
+    }
+  }
 }
