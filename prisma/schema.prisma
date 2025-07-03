@@ -19,11 +19,26 @@ model Files {
   url       String
   size      Int
 
-  createdAt DateTime    @default(now()) @map("created_at")
-  updatedAt DateTime    @updatedAt @map("update_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("update_at")
+
   TaxCoupon TaxCoupon[]
+  FilesOcr  FilesOcr[]
 
   @@index([id, createdAt(sort: Desc)])
+}
+
+model FilesOcr {
+  id     String @id @default(uuid())
+  fileId String @map("file_id")
+  file   Files  @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  content String
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("update_at")
+
+  @@map("files_ocr")
 }
 
 // Tax Coupon
