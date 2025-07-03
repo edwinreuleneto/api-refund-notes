@@ -1,6 +1,7 @@
 // Dependencies
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Queue } from 'bullmq';
+import { TaxCouponStatus } from '@prisma/client';
 
 // DTO
 import { FilesService } from '../files/files.service';
@@ -29,7 +30,12 @@ export class TaxCouponService {
 
       await this.queue.add('process', {
         taxCouponId: taxCoupon.id,
-        file: fileData,
+        fileId: savedFile.id,
+      });
+
+      await this.prisma.taxCoupon.update({
+        where: { id: taxCoupon.id },
+        data: { status: TaxCouponStatus.TEXTRACT_INITIATED },
       });
 
       return taxCoupon;
