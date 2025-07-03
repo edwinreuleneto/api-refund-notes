@@ -7,9 +7,10 @@ import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { TaxCouponModule } from './tax-coupon/tax-coupon.module';
 import { FilesModule } from './files/files.module';
+import { QueueModule } from './queue/queue.module';
 
 @Module({
-  imports: [PrismaModule, TaxCouponModule, FilesModule],
+  imports: [PrismaModule, TaxCouponModule, FilesModule, QueueModule],
   controllers: [AppController],
   providers: [AppService],
 })

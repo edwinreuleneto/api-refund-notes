@@ -1,16 +1,38 @@
 // Dependencies
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Queue } from 'bullmq';
 
 // DTO
-import { CreateTaxCouponDto } from './dto/create-tax-coupon.dto';
+import { FilesService } from '../files/files.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { TAX_COUPON_QUEUE } from '../queue/queue.module';
 
 @Injectable()
 export class TaxCouponService {
-  update(id: number, createTaxCouponDto: CreateTaxCouponDto) {
+  private readonly logger = new Logger(TaxCouponService.name);
+  constructor(
+    private readonly filesService: FilesService,
+    private readonly prisma: PrismaService,
+    @Inject(TAX_COUPON_QUEUE) private readonly queue: Queue,
+  ) {}
+
+  async create(file: Express.Multer.File) {
     try {
+      const fileData = await this.filesService.upload(file);
+      const savedFile = await this.prisma.files.create({ data: fileData });
+      const taxCoupon = await this.prisma.taxCoupon.create({
+        data: { fileId: savedFile.id },
+      });
 
+      await this.queue.add('process', {
+        taxCouponId: taxCoupon.id,
+        file: fileData,
+      });
+
+      return taxCoupon;
     } catch (error) {
-
+      this.logger.error('Failed to create tax coupon', error as Error);
+      throw error;
     }
   }
 }
