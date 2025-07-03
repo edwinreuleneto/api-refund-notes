@@ -13,6 +13,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { TaxCouponModule } from './tax-coupon/tax-coupon.module';
 import { FilesModule } from './files/files.module';
 import { QueueModule } from './queue/queue.module';
+import { OcrModule } from './ocr/ocr.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { QueueModule } from './queue/queue.module';
     TaxCouponModule,
     FilesModule,
     QueueModule,
+    OcrModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
