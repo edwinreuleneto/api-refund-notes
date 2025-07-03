@@ -13,14 +13,14 @@ model Files {
   id        String @id @default(uuid())
   name      String
   extension String
-  baseUrl   String @unique @map("base_url")
+  baseUrl   String
   folder    String
   file      String
-  url       String
+  url       String @unique
   size      Int
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("update_at")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   TaxCoupon TaxCoupon[]
   FilesOcr  FilesOcr[]
@@ -30,13 +30,13 @@ model Files {
 
 model FilesOcr {
   id     String @id @default(uuid())
-  fileId String @map("file_id")
+  fileId String
   file   Files  @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
   content String
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("update_at")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("files_ocr")
 }
@@ -45,11 +45,11 @@ model FilesOcr {
 model TaxCoupon {
   id     String          @id @default(uuid())
   status TaxCouponStatus @default(UPLOAD)
-  fileId String          @map("file_id")
+  fileId String
   file   Files           @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("update_at")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("tax_coupons")
 }

@@ -22,6 +22,7 @@ export class TaxCouponService {
   async create(file: Express.Multer.File) {
     try {
       const fileData = await this.filesService.upload(file);
+      console.log('fileData', fileData);
       const savedFile = await this.prisma.files.create({ data: fileData });
 
       const taxCoupon = await this.prisma.taxCoupon.create({

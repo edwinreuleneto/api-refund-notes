@@ -6,7 +6,10 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { Worker, Job, Queue } from 'bullmq';
-import { TextractClient, DetectDocumentTextCommand } from '@aws-sdk/client-textract';
+import {
+  TextractClient,
+  DetectDocumentTextCommand,
+} from '@aws-sdk/client-textract';
 import { PrismaService } from '../prisma/prisma.service';
 import { TAX_COUPON_QUEUE } from '../queue/queue.module';
 import { TaxCouponStatus } from '@prisma/client';
@@ -38,10 +41,10 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
   onModuleInit() {
     this.worker = new Worker<ProcessJobData>(
       this.queue.name,
-      job => this.process(job),
+      (job) => this.process(job),
       { connection: this.queue.opts.connection },
     );
-    this.worker.on('error', err => this.logger.error('Worker error', err));
+    this.worker.on('error', (err) => this.logger.error('Worker error', err));
   }
 
   async onModuleDestroy() {
@@ -56,7 +59,9 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
         data: { status: TaxCouponStatus.TEXTRACT_INITIATED },
       });
 
-      const file = await this.prisma.files.findUnique({ where: { id: fileId } });
+      const file = await this.prisma.files.findUnique({
+        where: { id: fileId },
+      });
       if (!file) {
         throw new Error('File not found');
       }
@@ -71,10 +76,11 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
       );
 
       const text =
-        response.Blocks?.filter(b => b.BlockType === 'LINE' && b.Text)
-          .map(b => b.Text)
+        response.Blocks?.filter((b) => b.BlockType === 'LINE' && b.Text)
+          .map((b) => b.Text)
           .join('\n') ?? '';
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       await this.prisma.filesOcr.create({
         data: {
           fileId,

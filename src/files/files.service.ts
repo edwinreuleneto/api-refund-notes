@@ -23,8 +23,7 @@ export class FilesService {
     try {
       const bucket = process.env.AWS_ACCESS_BUCKET ?? 'bucket';
       const folder = process.env.S3_FOLDER ?? 'cupons';
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      const region = this.s3.config.region as string;
+      const region = process.env.AWS_REGION;
       const baseUrl = `https://${bucket}.s3.${region}.amazonaws.com`;
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       const key = `${crypto.randomUUID()}-${file.originalname}`;
