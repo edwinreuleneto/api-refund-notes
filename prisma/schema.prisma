@@ -1,0 +1,50 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Files
+model Files {
+  id        String @id @default(uuid())
+  name      String @unique
+  extension String
+  baseUrl   String @map("base_url")
+  folder    String
+  file      String
+  url       String
+  size      Int
+
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("update_at")
+  TaxCoupon TaxCoupon[]
+
+  @@index([id, createdAt(sort: Desc)])
+}
+
+// Tax Coupon
+model TaxCoupon {
+  id     String          @id @default(uuid())
+  status TaxCouponStatus @default(UPLOAD)
+  fileId String          @map("file_id")
+  file   Files           @relation(fields: [fileId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("update_at")
+
+  @@map("tax_coupons")
+}
+
+enum TaxCouponStatus {
+  UPLOAD
+  TEXTRACT_INITIATED
+  TEXTRACT_COMPLETED
+  AI_INITIATED
+  AI_COMPLETED
+  COMPLETED
+  FAILED
+}
