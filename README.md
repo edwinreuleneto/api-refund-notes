@@ -31,6 +31,18 @@
 $ npm install
 ```
 
+### Environment variables
+
+Create a `.env` file with the following entries to enable S3 uploads:
+
+```bash
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+AWS_ACCESS_BUCKET=your-bucket-name
+AWS_REGION=us-east-1
+S3_FOLDER=cupons
+```
+
 ## Compile and run the project
 
 ```bash
