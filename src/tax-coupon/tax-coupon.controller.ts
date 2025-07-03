@@ -5,6 +5,8 @@ import {
   UseInterceptors,
   UploadedFile,
   Logger,
+  Get,
+  Param,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -21,6 +23,7 @@ import { TaxCouponService } from './tax-coupon.service';
 // DTO
 import { CreateTaxCouponDto } from './dto/create-tax-coupon.dto';
 import { TaxCouponResponseDto } from './dto/tax-coupon-response.dto';
+import { TaxCouponDetailsDto } from './dto/tax-coupon-details.dto';
 
 @ApiTags('Tax Coupon')
 @Controller('tax-coupon')
@@ -39,6 +42,17 @@ export class TaxCouponController {
       return this.taxCouponService.create(file);
     } catch (error) {
       this.logger.error('Failed to create tax coupon', error as Error);
+      throw error;
+    }
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get tax coupon by id' })
+  async getById(@Param('id') id: string): Promise<TaxCouponDetailsDto> {
+    try {
+      return this.taxCouponService.getById(id) as unknown as TaxCouponDetailsDto;
+    } catch (error) {
+      this.logger.error('Failed to get tax coupon', error as Error);
       throw error;
     }
   }

@@ -48,10 +48,25 @@ model TaxCoupon {
   fileId String
   file   Files           @relation(fields: [fileId], references: [id], onDelete: Cascade)
 
+  ai     TaxCouponAi[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("tax_coupons")
+}
+
+model TaxCouponAi {
+  id          String    @id @default(uuid())
+  taxCouponId String
+  taxCoupon   TaxCoupon @relation(fields: [taxCouponId], references: [id], onDelete: Cascade)
+
+  data       Json
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tax_coupon_ai")
 }
 
 enum TaxCouponStatus {
