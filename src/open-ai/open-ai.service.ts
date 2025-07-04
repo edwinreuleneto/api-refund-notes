@@ -76,7 +76,7 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
       const runStatus = await this.waitForCompletion(thread.id, run.id);
 
       if (runStatus.status !== 'completed') {
-        throw new Error('Assistant run failed');
+        throw new Error(`Assistant run failed with status: ${runStatus.status}`);
       }
 
       const data = await this.fetchResponse(thread.id);
@@ -92,7 +92,34 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
   }
 
   private buildPrompt(text: string): string {
-    return `Extract the tax coupon information as JSON in the following format: { establishment: { name, cnpj, state_registration, address: { street, number, complement, neighborhood, city, state, postal_code } }, document: { type, description, series, number, issue_date, access_key, consult_url, receipt_url }, items: [ { code, description, quantity, unit, unit_price, total_price, category_system } ], totals: { total_items, subtotal, total, payment_method }, customer: { identified } } from the text:\n\n${text}`;
+    return `
+You are a JSON extraction engine. Extract the tax coupon information from the text below.
+
+Only return a valid JSON object in this exact format:
+
+{
+  establishment: {
+    name, cnpj, state_registration,
+    address: {
+      street, number, complement, neighborhood, city, state, postal_code
+    }
+  },
+  document: {
+    type, description, series, number, issue_date, access_key, consult_url, receipt_url
+  },
+  items: [
+    { code, description, quantity, unit, unit_price, total_price, category_system }
+  ],
+  totals: {
+    total_items, subtotal, total, payment_method
+  },
+  customer: {
+    identified
+  }
+}
+
+Text:
+${text}`.trim();
   }
 
   private async updateStatus(id: string, status: TaxCouponStatus) {
@@ -131,17 +158,16 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async createThread(prompt: string, ext: string, image: string) {
-    console.log('image', image);
+    this.logger.verbose('Generated prompt', prompt);
+    this.logger.verbose('Image URL', image);
+
     return this.openai.beta.threads.create({
       messages: [
         {
           role: 'user',
           content: [
             { type: 'text', text: prompt },
-            {
-              type: 'image_url',
-              image_url: { url: image },
-            },
+            { type: 'image_url', image_url: { url: image } },
           ],
         },
       ],
@@ -155,31 +181,47 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async waitForCompletion(threadId: string, runId: string) {
-    let runStatus = await this.openai.beta.threads.runs.retrieve(
-      threadId,
-      runId,
-    );
+    let runStatus = await this.openai.beta.threads.runs.retrieve(threadId, runId);
+    let attempts = 0;
+
     while (
       runStatus.status === 'queued' ||
       runStatus.status === 'in_progress'
     ) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       runStatus = await this.openai.beta.threads.runs.retrieve(threadId, runId);
+      this.logger.verbose(`Waiting AI run... Attempt ${++attempts}, status: ${runStatus.status}`);
     }
+
     return runStatus;
   }
 
   private async fetchResponse(threadId: string): Promise<TaxCouponAiResponse> {
     const messages = await this.openai.beta.threads.messages.list(threadId);
-    const lastMessage = messages.data[messages.data.length - 1];
-    const block = lastMessage.content[0];
-    if (!isTextBlock(block)) {
-      throw new Error('Unexpected assistant response');
+
+    if (!messages.data.length) {
+      throw new Error('No messages found from AI');
     }
-    return JSON.parse(block.text.value) as TaxCouponAiResponse;
+
+    const lastMessage = messages.data[messages.data.length - 1];
+    const block = lastMessage.content.find(isTextBlock);
+
+    if (!block) {
+      throw new Error('No valid text block found in AI response');
+    }
+
+    const text = block.text.value;
+    this.logger.verbose('AI response raw text:', text);
+
+    try {
+      return JSON.parse(text) as TaxCouponAiResponse;
+    } catch (err) {
+      throw new Error(`Failed to parse AI response JSON: ${text}`);
+    }
   }
 
   private async saveAiData(id: string, data: TaxCouponAiResponse) {
+    this.logger.verbose('Parsed AI Data', JSON.stringify(data, null, 2));
     await this.prisma.$transaction(async (tx) => {
       await tx.taxCouponAi.create({
         data: {
