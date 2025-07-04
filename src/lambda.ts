@@ -7,9 +7,8 @@ import { ValidationPipe } from '@nestjs/common';
 import { Handler } from 'aws-lambda';
 import { datadog } from 'datadog-lambda-js';
 
-// Swagger
-let SwaggerModule: typeof import('@nestjs/swagger').SwaggerModule;
-let DocumentBuilder: typeof import('@nestjs/swagger').DocumentBuilder;
+// Dependencies
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 // Usamos require() conforme exemplo oficial de NestJS + Vendia
 const serverlessExpress = require('@vendia/serverless-express');
@@ -29,10 +28,6 @@ async function bootstrap(): Promise<Handler> {
     app.useGlobalPipes(
       new ValidationPipe({ whitelist: true, transform: true }),
     );
-
-    const swagger = await import('@nestjs/swagger');
-    SwaggerModule = swagger.SwaggerModule;
-    DocumentBuilder = swagger.DocumentBuilder;
 
     const config = new DocumentBuilder()
       .setTitle('API Refund Notes')
