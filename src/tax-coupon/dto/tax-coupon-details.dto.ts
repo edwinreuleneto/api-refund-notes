@@ -135,7 +135,7 @@ export class TaxCouponAiDto {
   @ApiProperty({ type: () => TaxCouponAiCustomerDto, required: false })
   customer?: TaxCouponAiCustomerDto | null;
 
-  @ApiProperty()
+  @ApiProperty({ type: Date })
   createdAt!: Date;
 }
 

@@ -8,12 +8,12 @@ export class TaxCouponResponseDto {
   @ApiProperty({ enum: TaxCouponStatus })
   status!: TaxCouponStatus;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   fileId!: string;
 
-  @ApiProperty()
+  @ApiProperty({ type: Date })
   createdAt!: Date;
 
-  @ApiProperty()
+  @ApiProperty({ type: Date })
   updatedAt?: Date;
 }
