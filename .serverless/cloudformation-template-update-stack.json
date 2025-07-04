@@ -162,9 +162,9 @@
           "S3Bucket": {
             "Ref": "ServerlessDeploymentBucket"
           },
-          "S3Key": "serverless/api-refund/production/1751654303820-2025-07-04T18:38:23.820Z/api-refund.zip"
+          "S3Key": "serverless/api-refund/production/1751659123248-2025-07-04T19:58:43.248Z/api-refund.zip"
         },
-        "Handler": "src/lambda.handler",
+        "Handler": "dist/lambda.handler",
         "Runtime": "nodejs20.x",
         "FunctionName": "api-refund-production-app",
         "MemorySize": 512,
@@ -185,14 +185,14 @@
         "AppLogGroup"
       ]
     },
-    "AppLambdaVersionqegxEA4THzc41iG6UgR61hXa0uQVcAKHb07uls5pQbY": {
+    "AppLambdaVersiondVr9A1VAlonGHv99bpYt3UzIEX4XxjAQsP3jl4jA5y4": {
       "Type": "AWS::Lambda::Version",
       "DeletionPolicy": "Retain",
       "Properties": {
         "FunctionName": {
           "Ref": "AppLambdaFunction"
         },
-        "CodeSha256": "UtJ9dMGtttsXdHGs8U4qJRuC46Skgt5quUoWuqskAZk="
+        "CodeSha256": "Ej9vEGGvhklR0Hu6QqIn7lcRntKMj/yV0rjnaIvdFnU="
       }
     },
     "HttpApi": {
@@ -269,13 +269,13 @@
         "TimeoutInMillis": 30000
       }
     },
-    "HttpApiRouteAnyProxyVar": {
+    "HttpApiRouteDefault": {
       "Type": "AWS::ApiGatewayV2::Route",
       "Properties": {
         "ApiId": {
           "Ref": "HttpApi"
         },
-        "RouteKey": "ANY /{proxy+}",
+        "RouteKey": "$default",
         "Target": {
           "Fn::Join": [
             "/",
@@ -303,7 +303,7 @@
     "AppLambdaFunctionQualifiedArn": {
       "Description": "Current Lambda function version",
       "Value": {
-        "Ref": "AppLambdaVersionqegxEA4THzc41iG6UgR61hXa0uQVcAKHb07uls5pQbY"
+        "Ref": "AppLambdaVersiondVr9A1VAlonGHv99bpYt3UzIEX4XxjAQsP3jl4jA5y4"
       },
       "Export": {
         "Name": "sls-api-refund-production-AppLambdaFunctionQualifiedArn"

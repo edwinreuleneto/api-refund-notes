@@ -11,10 +11,10 @@
       "stage": "production",
       "memorySize": 512,
       "timeout": 30,
-      "versionFunctions": true,
       "environment": {
         "NODE_ENV": "production"
       },
+      "versionFunctions": true,
       "compiledCloudFormationTemplate": {
         "AWSTemplateFormatVersion": "2010-09-09",
         "Description": "The AWS CloudFormation template for this Serverless application",
@@ -179,9 +179,9 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/api-refund/production/1751654303820-2025-07-04T18:38:23.820Z/api-refund.zip"
+                "S3Key": "serverless/api-refund/production/1751659123248-2025-07-04T19:58:43.248Z/api-refund.zip"
               },
-              "Handler": "src/lambda.handler",
+              "Handler": "dist/lambda.handler",
               "Runtime": "nodejs20.x",
               "FunctionName": "api-refund-production-app",
               "MemorySize": 512,
@@ -202,14 +202,14 @@
               "AppLogGroup"
             ]
           },
-          "AppLambdaVersionqegxEA4THzc41iG6UgR61hXa0uQVcAKHb07uls5pQbY": {
+          "AppLambdaVersiondVr9A1VAlonGHv99bpYt3UzIEX4XxjAQsP3jl4jA5y4": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "AppLambdaFunction"
               },
-              "CodeSha256": "UtJ9dMGtttsXdHGs8U4qJRuC46Skgt5quUoWuqskAZk="
+              "CodeSha256": "Ej9vEGGvhklR0Hu6QqIn7lcRntKMj/yV0rjnaIvdFnU="
             }
           },
           "HttpApi": {
@@ -283,13 +283,13 @@
               "TimeoutInMillis": 30000
             }
           },
-          "HttpApiRouteAnyProxyVar": {
+          "HttpApiRouteDefault": {
             "Type": "AWS::ApiGatewayV2::Route",
             "Properties": {
               "ApiId": {
                 "Ref": "HttpApi"
               },
-              "RouteKey": "ANY /{proxy+}",
+              "RouteKey": "$default",
               "Target": {
                 "Fn::Join": [
                   "/",
@@ -317,7 +317,7 @@
           "AppLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "AppLambdaVersionqegxEA4THzc41iG6UgR61hXa0uQVcAKHb07uls5pQbY"
+              "Ref": "AppLambdaVersiondVr9A1VAlonGHv99bpYt3UzIEX4XxjAQsP3jl4jA5y4"
             },
             "Export": {
               "Name": "sls-api-refund-production-AppLambdaFunctionQualifiedArn"
@@ -443,38 +443,17 @@
       },
       "vpc": {}
     },
-    "custom": {
-      "esbuild": {
-        "bundle": true,
-        "minify": false,
-        "target": "node20",
-        "platform": "node",
-        "concurrency": 10,
-        "external": [
-          "class-transformer/storage",
-          "@nestjs/microservices",
-          "@nestjs/microservices/microservices-module",
-          "@nestjs/websockets/socket-module",
-          "swagger-ui-dist",
-          "aws-sdk"
-        ]
-      }
-    },
     "plugins": [
-      "serverless-esbuild"
+      "serverless-offline"
     ],
     "pluginsData": {},
     "functions": {
       "app": {
-        "handler": "src/lambda.handler",
+        "handler": "dist/lambda.handler",
         "events": [
           {
-            "httpApi": {
-              "path": "/{proxy+}",
-              "method": "ANY"
-            },
-            "resolvedMethod": "ANY",
-            "resolvedPath": "/{proxy+}"
+            "httpApi": "*",
+            "resolvedMethod": "ANY"
           }
         ],
         "name": "api-refund-production-app",
@@ -483,7 +462,7 @@
         "timeout": 30,
         "runtime": "nodejs20.x",
         "vpc": {},
-        "versionLogicalId": "AppLambdaVersionqegxEA4THzc41iG6UgR61hXa0uQVcAKHb07uls5pQbY"
+        "versionLogicalId": "AppLambdaVersiondVr9A1VAlonGHv99bpYt3UzIEX4XxjAQsP3jl4jA5y4"
       }
     },
     "configValidationMode": "warn",
@@ -497,18 +476,16 @@
       "functions": {
         "$ref": "$[\"service\"][\"functions\"]"
       },
-      "custom": {
-        "$ref": "$[\"service\"][\"custom\"]"
-      },
       "plugins": {
         "$ref": "$[\"service\"][\"plugins\"]"
       }
     },
     "layers": {},
-    "isDashboardMonitoringPreconfigured": false
+    "isDashboardMonitoringPreconfigured": false,
+    "artifact": "/Applications/MAMP/htdocs/Legionari/Reembolso/Desenv/api-refund-notes/.serverless/api-refund.zip"
   },
   "package": {
-    "artifactDirectoryName": "serverless/api-refund/production/1751654303820-2025-07-04T18:38:23.820Z",
+    "artifactDirectoryName": "serverless/api-refund/production/1751659123248-2025-07-04T19:58:43.248Z",
     "artifact": "api-refund.zip"
   }
 }

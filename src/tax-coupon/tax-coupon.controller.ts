@@ -52,9 +52,11 @@ export class TaxCouponController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get tax coupon by id' })
-  async getById(@Param('id') id: string): Promise<TaxCouponDetailsDto> {
+  getById(@Param('id') id: string): TaxCouponDetailsDto {
     try {
-      return this.taxCouponService.getById(id) as unknown as TaxCouponDetailsDto;
+      return this.taxCouponService.getById(
+        id,
+      ) as unknown as TaxCouponDetailsDto;
     } catch (error) {
       this.logger.error('Failed to get tax coupon', error as Error);
       throw error;

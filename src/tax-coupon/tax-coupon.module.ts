@@ -9,5 +9,6 @@ import { QueueModule } from '../queue/queue.module';
   imports: [FilesModule, PrismaModule, QueueModule],
   controllers: [TaxCouponController],
   providers: [TaxCouponService],
+  exports: [TaxCouponService],
 })
 export class TaxCouponModule {}

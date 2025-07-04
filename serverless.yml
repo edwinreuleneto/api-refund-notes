@@ -1,6 +1,6 @@
 service: api-refund
 
-frameworkVersion: "3"
+frameworkVersion: '3'
 
 provider:
   name: aws
@@ -9,32 +9,14 @@ provider:
   stage: production
   memorySize: 512
   timeout: 30
-  versionFunctions: true
   environment:
     NODE_ENV: production
 
 functions:
   app:
-    handler: src/lambda.handler
+    handler: dist/lambda.handler
     events:
-      - httpApi:
-          path: /{proxy+}
-          method: ANY
-
-custom:
-  esbuild:
-    bundle: true
-    minify: false
-    target: node20
-    platform: node
-    concurrency: 10
-    external:
-      - class-transformer/storage
-      - '@nestjs/microservices'
-      - '@nestjs/microservices/microservices-module'
-      - '@nestjs/websockets/socket-module'
-      - swagger-ui-dist
-      - aws-sdk
+      - httpApi: '*'
 
 plugins:
-  - serverless-esbuild
+  - serverless-offline
