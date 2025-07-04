@@ -6,7 +6,6 @@ import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
 import { Handler } from 'aws-lambda';
-import { datadog } from 'datadog-lambda-js';
 
 // Dependencies
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -40,15 +39,14 @@ async function bootstrap(): Promise<Handler> {
 
     await app.init();
 
-    const { handler } = serverlessExpress({ app: expressApp });
-    cachedHandler = handler;
+    cachedHandler = serverlessExpress({ app: expressApp });
   }
   return cachedHandler;
 }
 
-export const handler: Handler = datadog(async (event, context, callback) => {
+export const handler: Handler = async (event, context, callback) => {
   context.callbackWaitsForEmptyEventLoop = false;
   const handlerFunc = await bootstrap();
   return handlerFunc(event, context, callback);
-});
+};
 
