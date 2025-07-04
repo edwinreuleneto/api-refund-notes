@@ -15,12 +15,14 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(OpenAiService.name);
   private worker?: Worker;
   private readonly openai: OpenAI;
+  private readonly assistantId: string;
 
   constructor(
     private readonly prisma: PrismaService,
     @Inject(OPEN_AI_QUEUE) private readonly queue: Queue,
   ) {
     this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    this.assistantId = process.env.OPENAI_ASSISTANT_ID ?? '';
   }
 
   onModuleInit() {
@@ -55,12 +57,33 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
 
       const prompt = `Extract the receipt information as JSON in the following format: { establishment: { name, cnpj, state_registration, address: { street, number, complement, neighborhood, city, state, postal_code } }, document: { type, description, series, number, issue_date, access_key, consult_url, receipt_url }, items: [ { code, description, quantity, unit, unit_price, total_price, category_system } ], totals: { total_items, subtotal, total, payment_method }, customer: { identified } } from the text:\n\n${ocr.content}`;
 
-      const completion = await this.openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
+      const thread = await this.openai.beta.threads.create({
         messages: [{ role: 'user', content: prompt }],
       });
 
-      const resultText = completion.choices[0]?.message?.content ?? '{}';
+      const run = await this.openai.beta.threads.runs.create(thread.id, {
+        assistant_id: this.assistantId,
+      });
+
+      let runStatus = run;
+      while (
+        runStatus.status === 'queued' ||
+        runStatus.status === 'in_progress'
+      ) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        runStatus = await this.openai.beta.threads.runs.retrieve(
+          thread.id,
+          run.id,
+        );
+      }
+
+      if (runStatus.status !== 'completed') {
+        throw new Error('Assistant run failed');
+      }
+
+      const messages = await this.openai.beta.threads.messages.list(thread.id);
+      const resultText =
+        messages.data[messages.data.length - 1]?.content[0]?.text?.value ?? '{}';
       const data = JSON.parse(resultText);
 
       const aiRecord = await this.prisma.taxCouponAi.create({
