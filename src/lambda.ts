@@ -1,41 +1,58 @@
-import { Callback, Context, Handler } from 'aws-lambda';
-import { NestFactory } from '@nestjs/core';
-import { ExpressAdapter } from '@nestjs/platform-express';
-import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+// Dependencies
 import helmet from 'helmet';
 import express from 'express';
-import serverlessExpress from '@vendia/serverless-express';
+import { NestFactory } from '@nestjs/core';
+import { ExpressAdapter } from '@nestjs/platform-express';
+import { ValidationPipe } from '@nestjs/common';
+import { Handler } from 'aws-lambda';
+import { datadog } from 'datadog-lambda-js';
 
-let cachedServer: Handler;
+// Swagger
+let SwaggerModule: typeof import('@nestjs/swagger').SwaggerModule;
+let DocumentBuilder: typeof import('@nestjs/swagger').DocumentBuilder;
+
+// Usamos require() conforme exemplo oficial de NestJS + Vendia
+const serverlessExpress = require('@vendia/serverless-express');
+
+import { AppModule } from './app.module';
+
+let cachedHandler: Handler;
 
 async function bootstrap(): Promise<Handler> {
-  const expressApp = express();
-  const adapter = new ExpressAdapter(expressApp);
-  const app = await NestFactory.create(AppModule, adapter);
+  if (!cachedHandler) {
+    const expressApp = express();
+    const adapter = new ExpressAdapter(expressApp);
+    const app = await NestFactory.create(AppModule, adapter);
 
-  app.use(helmet());
-  app.enableCors();
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+    app.use(helmet());
+    app.enableCors();
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, transform: true }),
+    );
 
-  const config = new DocumentBuilder()
-    .setTitle('API Refund Notes')
-    .setDescription('Refund Notes API')
-    .setVersion('1.0')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+    const swagger = await import('@nestjs/swagger');
+    SwaggerModule = swagger.SwaggerModule;
+    DocumentBuilder = swagger.DocumentBuilder;
 
-  await app.init();
-  return serverlessExpress({ app: expressApp });
+    const config = new DocumentBuilder()
+      .setTitle('API Refund Notes')
+      .setDescription('Refund Notes API')
+      .setVersion('1.0')
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document);
+
+    await app.init();
+
+    const { handler } = serverlessExpress({ app: expressApp });
+    cachedHandler = handler;
+  }
+  return cachedHandler;
 }
 
-export const handler: Handler = async (
-  event: any,
-  context: Context,
-  callback: Callback,
-) => {
-  cachedServer = cachedServer ?? (await bootstrap());
-  return cachedServer(event, context, callback);
-};
+export const handler: Handler = datadog(async (event, context, callback) => {
+  context.callbackWaitsForEmptyEventLoop = false;
+  const handlerFunc = await bootstrap();
+  return handlerFunc(event, context, callback);
+});
+

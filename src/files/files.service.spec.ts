@@ -17,10 +17,10 @@ describe('FilesService', () => {
   });
 
   it('should generate a presigned url', async () => {
-    process.env.AWS_ACCESS_BUCKET = 'bucket';
-    process.env.AWS_REGION = 'us-east-1';
-    process.env.AWS_ACCESS_KEY_ID = 'key';
-    process.env.AWS_SECRET_ACCESS_KEY = 'secret';
+    process.env._AWS_ACCESS_BUCKET_INTERNAL = 'bucket';
+    process.env._AWS_REGION_INTERNAL = 'us-east-1';
+    process.env._AWS_ACCESS_KEY_ID_INTERNAL = 'key';
+    process.env._AWS_SECRET_ACCESS_KEY_INTERNAL = 'secret';
     const url = await service.generatePresignedUrl('folder', 'file', 60);
     expect(typeof url).toBe('string');
   });

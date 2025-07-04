@@ -32,10 +32,10 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
     @Inject(OPEN_AI_QUEUE) private readonly aiQueue: Queue,
   ) {
     this.textract = new TextractClient({
-      region: process.env.AWS_REGION ?? 'region',
+      region: process.env._AWS_REGION_INTERNAL ?? 'region',
       credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID ?? '',
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY ?? '',
+        accessKeyId: process.env._AWS_ACCESS_KEY_ID_INTERNAL ?? '',
+        secretAccessKey: process.env._AWS_SECRET_ACCESS_KEY_INTERNAL ?? '',
       },
     });
   }
@@ -69,7 +69,7 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
         throw new Error('File not found');
       }
 
-      const bucket = process.env.AWS_ACCESS_BUCKET ?? 'bucket';
+      const bucket = process.env._AWS_ACCESS_BUCKET_INTERNAL ?? 'bucket';
       const key = `${file.folder}/${file.file}`;
 
       const response = await this.textract.send(

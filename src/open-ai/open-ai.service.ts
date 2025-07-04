@@ -1,3 +1,5 @@
+// Dependencies
+import { OpenAI } from 'openai';
 import {
   Inject,
   Injectable,
@@ -6,12 +8,16 @@ import {
   OnModuleInit,
 } from '@nestjs/common';
 import { Worker, Job, Queue } from 'bullmq';
-import { OpenAI } from 'openai';
+import { TaxCouponStatus } from '@prisma/client';
+
+// Services
 import { PrismaService } from '../prisma/prisma.service';
 import { FilesService } from '../files/files.service';
-import { FiscalLookupService } from '../fiscal-lookup/fiscal-lookup.service';
+
+// Modules
 import { OPEN_AI_QUEUE } from '../queue/queue.module';
-import { TaxCouponStatus } from '@prisma/client';
+
+// Interface
 import { TaxCouponAiResponse } from './interfaces/tax-coupon-ai-response.interface';
 
 interface AiJobData {
@@ -43,7 +49,6 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
     private readonly prisma: PrismaService,
     @Inject(OPEN_AI_QUEUE) private readonly queue: Queue,
     private readonly filesService: FilesService,
-    private readonly fiscalLookupService: FiscalLookupService,
   ) {
     this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     this.assistantId = process.env.OPENAI_ASSISTANT_ID ?? '';

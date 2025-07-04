@@ -1,21 +1,39 @@
-service: api-refund-notes
-frameworkVersion: '3'
+service: api-refund-notes-prod
+
+frameworkVersion: "3"
 
 provider:
   name: aws
-  runtime: nodejs18.x
-  region: us-east-1
+  runtime: nodejs20.x
+  region: us-east-2
   stage: production
   memorySize: 512
   timeout: 30
+  versionFunctions: true
   environment:
     NODE_ENV: production
 
 functions:
   app:
-    handler: dist/lambda.handler
-    events:
-      - httpApi: '*'
+    handler: src/lambda.handler
+    # provisionedConcurrency: 1 (opcional)
 
 plugins:
-  - serverless-offline
+  - serverless-esbuild
+
+custom:
+  esbuild:
+    bundle: true
+    minify: true
+    target: node20
+    platform: node
+    concurrency: 10
+    sourcemap: false
+    exclude:
+      - aws-sdk
+      - 'swagger-ui-express'
+    external:
+      - class-transformer/storage
+      - '@nestjs/microservices'
+      - '@nestjs/microservices/microservices-module'
+      - '@nestjs/websockets/socket-module'

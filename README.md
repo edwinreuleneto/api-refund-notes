@@ -36,10 +36,10 @@ $ npm install
 Create a `.env` file with the following entries:
 
 ```bash
-AWS_ACCESS_KEY_ID=your-access-key
-AWS_SECRET_ACCESS_KEY=your-secret-key
-AWS_ACCESS_BUCKET=your-bucket-name
-AWS_REGION=us-east-1
+_AWS_ACCESS_KEY_ID_INTERNAL=your-access-key
+_AWS_SECRET_ACCESS_KEY_INTERNAL=your-secret-key
+_AWS_ACCESS_BUCKET_INTERNAL=your-bucket-name
+_AWS_REGION_INTERNAL=us-east-1
 S3_FOLDER=cupons
 DATABASE_URL=postgresql://user:pass@localhost:5432/dbname
 OPENAI_API_KEY=your-openai-key
