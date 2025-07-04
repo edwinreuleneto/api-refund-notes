@@ -4,6 +4,7 @@ import {
   Post,
   UseInterceptors,
   UploadedFile,
+  Body,
   Logger,
   Get,
   Param,
@@ -37,9 +38,12 @@ export class TaxCouponController {
   @ApiBody({ type: CreateTaxCouponDto })
   @ApiCreatedResponse({ type: TaxCouponResponseDto })
   @UseInterceptors(FileInterceptor('file'))
-  async create(@UploadedFile() file: Express.Multer.File) {
+  async create(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() body: CreateTaxCouponDto,
+  ) {
     try {
-      return this.taxCouponService.create(file);
+      return this.taxCouponService.create(file, body.categories);
     } catch (error) {
       this.logger.error('Failed to create tax coupon', error as Error);
       throw error;

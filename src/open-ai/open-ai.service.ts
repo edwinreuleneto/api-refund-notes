@@ -17,6 +17,7 @@ import { TaxCouponAiResponse } from './interfaces/tax-coupon-ai-response.interfa
 interface AiJobData {
   taxCouponId: string;
   fileId: string;
+  categories?: string[];
 }
 
 type TextBlock = {
@@ -64,12 +65,13 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async process(job: Job<AiJobData>) {
-    const { taxCouponId, fileId } = job.data;
+    const { taxCouponId, fileId, categories } = job.data;
+    this.logger.verbose(`Starting AI processing for taxCoupon ${taxCouponId}`);
     try {
       await this.updateStatus(taxCouponId, TaxCouponStatus.AI_INITIATED);
 
       const { content, image, extension } = await this.getOcrAndImage(fileId);
-      const prompt = this.buildPrompt(content);
+      const prompt = this.buildPrompt(content, categories);
 
       const thread = await this.createThread(prompt, extension, image);
       const run = await this.startRun(thread.id);
@@ -91,8 +93,11 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private buildPrompt(text: string): string {
-    return `OCR:\n\n${text}`;
+  private buildPrompt(text: string, categories?: string[]): string {
+    const categoriesText = categories && categories.length
+      ? `\n\nCATEGORIES:\n${categories.join(', ')}`
+      : '';
+    return `OCR:\n\n${text}${categoriesText}`;
   }
 
   private async updateStatus(id: string, status: TaxCouponStatus) {

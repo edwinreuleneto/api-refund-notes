@@ -19,7 +19,7 @@ export class TaxCouponService {
     @Inject(TAX_COUPON_QUEUE) private readonly queue: Queue,
   ) {}
 
-  async create(file: Express.Multer.File) {
+  async create(file: Express.Multer.File, categories?: string[]) {
     try {
       this.logger.verbose('Initiating tax coupon creation');
       const fileData = await this.filesService.upload(file);
@@ -32,6 +32,7 @@ export class TaxCouponService {
       await this.queue.add('process', {
         taxCouponId: taxCoupon.id,
         fileId: savedFile.id,
+        categories,
       });
 
       await this.prisma.taxCoupon.update({
@@ -48,7 +49,7 @@ export class TaxCouponService {
 
   async getById(id: string) {
     try {
-      return await this.prisma.taxCoupon.findUnique({
+      const data = await this.prisma.taxCoupon.findUnique({
         where: { id },
         include: {
           ai: {
@@ -64,6 +65,14 @@ export class TaxCouponService {
           },
         },
       });
+
+      if (!data) return null;
+
+      const { ai, ...rest } = data as any;
+      return {
+        ...rest,
+        details: ai?.[0] ?? null,
+      };
     } catch (error) {
       this.logger.error('Failed to get tax coupon', error as Error);
       throw error;

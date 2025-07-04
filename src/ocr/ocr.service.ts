@@ -17,6 +17,7 @@ import { TaxCouponStatus } from '@prisma/client';
 interface ProcessJobData {
   taxCouponId: string;
   fileId: string;
+  categories?: string[];
 }
 
 @Injectable()
@@ -53,7 +54,8 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async process(job: Job<ProcessJobData>) {
-    const { taxCouponId, fileId } = job.data;
+    const { taxCouponId, fileId, categories } = job.data;
+    this.logger.verbose(`Starting OCR processing for taxCoupon ${taxCouponId}`);
     try {
       await this.prisma.taxCoupon.update({
         where: { id: taxCouponId },
@@ -97,6 +99,7 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
       await this.aiQueue.add('process-ai', {
         taxCouponId,
         fileId,
+        categories,
       });
     } catch (error) {
       this.logger.error('OCR processing failed', error as Error);

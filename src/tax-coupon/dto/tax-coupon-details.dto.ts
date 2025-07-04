@@ -141,5 +141,5 @@ export class TaxCouponAiDto {
 
 export class TaxCouponDetailsDto extends TaxCouponResponseDto {
   @ApiProperty({ type: () => TaxCouponAiDto, required: false })
-  ai?: TaxCouponAiDto | null;
+  details?: TaxCouponAiDto | null;
 }
