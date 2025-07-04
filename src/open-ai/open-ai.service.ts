@@ -77,7 +77,9 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
         throw new Error('OCR not found');
       }
 
-      const file = await this.prisma.files.findUnique({ where: { id: fileId } });
+      const file = await this.prisma.files.findUnique({
+        where: { id: fileId },
+      });
       if (!file) {
         throw new Error('File not found');
       }
@@ -95,7 +97,9 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
               { type: 'text', text: prompt },
               {
                 type: 'image_url',
-                image_url: { url: `data:image/${file.extension};base64,${base64Image}` },
+                image_url: {
+                  url: `data:image/${file.extension};base64,${base64Image}`,
+                },
               },
             ],
           },
@@ -124,9 +128,11 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
 
       const messages = await this.openai.beta.threads.messages.list(thread.id);
       const lastMessage = messages.data[messages.data.length - 1];
-      const textBlock = lastMessage?.content.find(isTextBlock);
-      const resultText = textBlock?.text?.value ?? '{}';
-      const data = JSON.parse(resultText);
+      console.log('lastMessage', lastMessage);
+
+      const data = JSON.parse(lastMessage.content[0].text.text.value);
+
+      console.log('data', data);
 
       await this.prisma.$transaction(async (tx) => {
         await tx.taxCouponAi.create({
@@ -206,9 +212,9 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
         });
       });
 
-      if (data.document?.access_key) {
-        await this.fiscalLookupService.consult(data.document.access_key);
-      }
+      // if (data.document?.access_key) {
+      //   await this.fiscalLookupService.consult(data.document.access_key);
+      // }
     } catch (error: unknown) {
       const message =
         error instanceof Error

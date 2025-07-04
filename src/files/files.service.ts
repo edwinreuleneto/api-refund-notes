@@ -2,7 +2,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { extname } from 'path';
 import * as crypto from 'crypto';
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 
 // DTO
