@@ -24,8 +24,7 @@ functions:
 custom:
   esbuild:
     bundle: true
-    minify: true
-    sourcemap: false
+    minify: false
     target: node20
     platform: node
     concurrency: 10

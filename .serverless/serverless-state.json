@@ -179,7 +179,7 @@
                 "S3Bucket": {
                   "Ref": "ServerlessDeploymentBucket"
                 },
-                "S3Key": "serverless/api-refund/production/1751646396208-2025-07-04T16:26:36.208Z/api-refund.zip"
+                "S3Key": "serverless/api-refund/production/1751649055423-2025-07-04T17:10:55.423Z/api-refund.zip"
               },
               "Handler": "src/lambda.handler",
               "Runtime": "nodejs20.x",
@@ -202,14 +202,14 @@
               "AppLogGroup"
             ]
           },
-          "AppLambdaVersionbJmsqDziBnuy6EqUTjW1pV2wm20u0WQ3gTH3b4SKtk": {
+          "AppLambdaVersionIP6LB8WFMxkIsQTg3ISXcb0nBlBVpIiHjOSwzRfv4": {
             "Type": "AWS::Lambda::Version",
             "DeletionPolicy": "Retain",
             "Properties": {
               "FunctionName": {
                 "Ref": "AppLambdaFunction"
               },
-              "CodeSha256": "W0LTyaxiOn2bK5zrHolK4dSEvQh+SXizYBcW+kL/p+4="
+              "CodeSha256": "+oWTG+4BfHuPth+gV220Ynq6S/Nt1PQKl/JAzfR/Nxo="
             }
           },
           "HttpApi": {
@@ -317,7 +317,7 @@
           "AppLambdaFunctionQualifiedArn": {
             "Description": "Current Lambda function version",
             "Value": {
-              "Ref": "AppLambdaVersionbJmsqDziBnuy6EqUTjW1pV2wm20u0WQ3gTH3b4SKtk"
+              "Ref": "AppLambdaVersionIP6LB8WFMxkIsQTg3ISXcb0nBlBVpIiHjOSwzRfv4"
             },
             "Export": {
               "Name": "sls-api-refund-production-AppLambdaFunctionQualifiedArn"
@@ -446,8 +446,7 @@
     "custom": {
       "esbuild": {
         "bundle": true,
-        "minify": true,
-        "sourcemap": false,
+        "minify": false,
         "target": "node20",
         "platform": "node",
         "concurrency": 10,
@@ -485,7 +484,7 @@
         "timeout": 30,
         "runtime": "nodejs20.x",
         "vpc": {},
-        "versionLogicalId": "AppLambdaVersionbJmsqDziBnuy6EqUTjW1pV2wm20u0WQ3gTH3b4SKtk"
+        "versionLogicalId": "AppLambdaVersionIP6LB8WFMxkIsQTg3ISXcb0nBlBVpIiHjOSwzRfv4"
       }
     },
     "configValidationMode": "warn",
@@ -510,7 +509,7 @@
     "isDashboardMonitoringPreconfigured": false
   },
   "package": {
-    "artifactDirectoryName": "serverless/api-refund/production/1751646396208-2025-07-04T16:26:36.208Z",
+    "artifactDirectoryName": "serverless/api-refund/production/1751649055423-2025-07-04T17:10:55.423Z",
     "artifact": "api-refund.zip"
   }
 }
