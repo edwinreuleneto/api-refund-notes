@@ -35,6 +35,7 @@ custom:
       - '@nestjs/microservices'
       - '@nestjs/microservices/microservices-module'
       - '@nestjs/websockets/socket-module'
+      - swagger-ui-dist
 
 plugins:
   - serverless-esbuild
