@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { TaxCouponResponseDto } from './tax-coupon-response.dto';
 
 export class TaxCouponAiEstablishmentDto {
-  @ApiProperty()
+  @ApiProperty({ type: String })
   id!: string;
 
   @ApiProperty({ required: false })
@@ -37,7 +37,7 @@ export class TaxCouponAiEstablishmentDto {
 }
 
 export class TaxCouponAiDocumentDto {
-  @ApiProperty()
+  @ApiProperty({ type: String })
   id!: string;
 
   @ApiProperty({ required: false })
@@ -66,7 +66,7 @@ export class TaxCouponAiDocumentDto {
 }
 
 export class TaxCouponAiItemDto {
-  @ApiProperty()
+  @ApiProperty({ type: String })
   id!: string;
 
   @ApiProperty({ required: false })
@@ -92,7 +92,7 @@ export class TaxCouponAiItemDto {
 }
 
 export class TaxCouponAiTotalsDto {
-  @ApiProperty()
+  @ApiProperty({ type: String })
   id!: string;
 
   @ApiProperty({ required: false })
@@ -109,7 +109,7 @@ export class TaxCouponAiTotalsDto {
 }
 
 export class TaxCouponAiCustomerDto {
-  @ApiProperty()
+  @ApiProperty({ type: String })
   id!: string;
 
   @ApiProperty({ required: false })
@@ -117,7 +117,7 @@ export class TaxCouponAiCustomerDto {
 }
 
 export class TaxCouponAiDto {
-  @ApiProperty()
+  @ApiProperty({ type: String })
   id!: string;
 
   @ApiProperty({ type: () => TaxCouponAiEstablishmentDto, required: false })

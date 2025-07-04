@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { TaxCouponStatus } from '../enum/tax-coupon-status.enum';
 
 export class TaxCouponResponseDto {
-  @ApiProperty()
+  @ApiProperty({ type: String })
   id!: string;
 
   @ApiProperty({ enum: TaxCouponStatus })
