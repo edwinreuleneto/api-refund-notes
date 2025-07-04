@@ -1,4 +1,5 @@
 // Dependencies
+import 'reflect-metadata';
 import helmet from 'helmet';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
