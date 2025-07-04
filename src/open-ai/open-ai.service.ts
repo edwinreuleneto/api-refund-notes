@@ -186,7 +186,8 @@ ${text}`.trim();
 
     while (
       runStatus.status === 'queued' ||
-      runStatus.status === 'in_progress'
+      runStatus.status === 'in_progress' ||
+      runStatus.status === 'requires_action'
     ) {
       await new Promise((resolve) => setTimeout(resolve, 2000));
       runStatus = await this.openai.beta.threads.runs.retrieve(threadId, runId);
