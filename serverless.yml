@@ -28,14 +28,13 @@ custom:
     target: node20
     platform: node
     concurrency: 10
-    exclude:
-      - aws-sdk
     external:
       - class-transformer/storage
       - '@nestjs/microservices'
       - '@nestjs/microservices/microservices-module'
       - '@nestjs/websockets/socket-module'
       - swagger-ui-dist
+      - aws-sdk
 
 plugins:
   - serverless-esbuild

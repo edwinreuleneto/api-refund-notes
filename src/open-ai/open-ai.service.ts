@@ -60,9 +60,7 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
       (job) => this.process(job),
       { connection: this.queue.opts.connection },
     );
-    this.worker.on('error', (err) =>
-      this.logger.error('AI Worker error', err),
-    );
+    this.worker.on('error', (err) => this.logger.error('AI Worker error', err));
   }
 
   async onModuleDestroy() {
