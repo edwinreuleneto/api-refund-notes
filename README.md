@@ -90,6 +90,17 @@ $ mau deploy
 
 With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
 
+### AWS Lambda
+
+This repository includes a `serverless.yml` file that configures the project to run as an AWS Lambda function. After building the application, deploy it with:
+
+```bash
+$ npm run build
+$ npx serverless deploy
+```
+
+Your Lambda function automatically stops when there are no requests, so the application is shut down whenever it's idle.
+
 ## Resources
 
 Check out a few resources that may come in handy when working with NestJS:
