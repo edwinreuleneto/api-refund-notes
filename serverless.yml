@@ -1,4 +1,4 @@
-service: api-refund-notes-prod
+service: api-refund
 
 frameworkVersion: "3"
 
@@ -14,30 +14,28 @@ provider:
     NODE_ENV: production
 
 functions:
-    app:
-      handler: src/lambda.handler
-      # provisionedConcurrency: 1 (opcional)
-      events:
-        - httpApi:
-            path: /{proxy+}
-            method: ANY
-
-plugins:
-  - serverless-esbuild
+  app:
+    handler: src/lambda.handler
+    events:
+      - httpApi:
+          path: /{proxy+}
+          method: ANY
 
 custom:
   esbuild:
     bundle: true
     minify: true
+    sourcemap: false
     target: node20
     platform: node
     concurrency: 10
-    sourcemap: false
     exclude:
       - aws-sdk
-      - 'swagger-ui-express'
     external:
       - class-transformer/storage
       - '@nestjs/microservices'
       - '@nestjs/microservices/microservices-module'
       - '@nestjs/websockets/socket-module'
+
+plugins:
+  - serverless-esbuild
