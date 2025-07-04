@@ -54,7 +54,9 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
       (job) => this.process(job),
       { connection: this.queue.opts.connection },
     );
-    this.worker.on('error', (err) => this.logger.error('AI Worker error', err));
+    this.worker.on('error', (err) =>
+      this.logger.error('AI Worker error', err),
+    );
   }
 
   async onModuleDestroy() {
@@ -98,31 +100,33 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async getOcrAndImage(fileId: string) {
-    const ocr = await this.prisma.filesOcr.findFirst({
-      where: { fileId },
-      orderBy: { createdAt: 'desc' },
-    });
+    const [ocr, file] = await Promise.all([
+      this.prisma.filesOcr.findFirst({
+        where: { fileId },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.files.findUnique({
+        where: { id: fileId },
+      }),
+    ]);
 
     if (!ocr) {
       throw new Error('OCR not found');
     }
 
-    const file = await this.prisma.files.findUnique({
-      where: { id: fileId },
-    });
     if (!file) {
       throw new Error('File not found');
     }
 
-    const buffer = await this.filesService.download(file.folder, file.file);
     return {
       content: ocr.content,
-      image: buffer.toString('base64'),
+      image: file.url,
       extension: file.extension,
     };
   }
 
   private async createThread(prompt: string, ext: string, image: string) {
+    console.log('image', image);
     return this.openai.beta.threads.create({
       messages: [
         {
@@ -131,7 +135,7 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
             { type: 'text', text: prompt },
             {
               type: 'image_url',
-              image_url: { url: `data:image/${ext};base64,${image}` },
+              image_url: { url: image },
             },
           ],
         },
@@ -146,8 +150,14 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async waitForCompletion(threadId: string, runId: string) {
-    let runStatus = await this.openai.beta.threads.runs.retrieve(threadId, runId);
-    while (runStatus.status === 'queued' || runStatus.status === 'in_progress') {
+    let runStatus = await this.openai.beta.threads.runs.retrieve(
+      threadId,
+      runId,
+    );
+    while (
+      runStatus.status === 'queued' ||
+      runStatus.status === 'in_progress'
+    ) {
       await new Promise((resolve) => setTimeout(resolve, 1000));
       runStatus = await this.openai.beta.threads.runs.retrieve(threadId, runId);
     }
