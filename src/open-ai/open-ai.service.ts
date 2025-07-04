@@ -63,12 +63,89 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
       const resultText = completion.choices[0]?.message?.content ?? '{}';
       const data = JSON.parse(resultText);
 
-      await this.prisma.taxCouponAi.create({
+      const aiRecord = await this.prisma.taxCouponAi.create({
         data: {
           taxCouponId,
-          data,
         },
       });
+
+      if (data.establishment) {
+        const e = data.establishment;
+        await this.prisma.taxCouponAiEstablishment.create({
+          data: {
+            taxCouponAiId: aiRecord.id,
+            name: e.name,
+            cnpj: e.cnpj,
+            stateRegistration: e.state_registration,
+            addressStreet: e.address?.street,
+            addressNumber: e.address?.number,
+            addressComplement: e.address?.complement,
+            addressNeighborhood: e.address?.neighborhood,
+            addressCity: e.address?.city,
+            addressState: e.address?.state,
+            addressPostalCode: e.address?.postal_code,
+          },
+        });
+      }
+
+      if (data.document) {
+        const d = data.document;
+        await this.prisma.taxCouponAiDocument.create({
+          data: {
+            taxCouponAiId: aiRecord.id,
+            type: d.type,
+            description: d.description,
+            series: d.series,
+            number: d.number,
+            issueDate: d.issue_date ? new Date(d.issue_date) : null,
+            accessKey: d.access_key,
+            consultUrl: d.consult_url,
+            receiptUrl: d.receipt_url,
+          },
+        });
+      }
+
+      if (Array.isArray(data.items)) {
+        await Promise.all(
+          data.items.map((item: any) =>
+            this.prisma.taxCouponAiItem.create({
+              data: {
+                taxCouponAiId: aiRecord.id,
+                code: item.code,
+                description: item.description,
+                quantity: item.quantity,
+                unit: item.unit,
+                unitPrice: item.unit_price,
+                totalPrice: item.total_price,
+                categorySystem: item.category_system,
+              },
+            }),
+          ),
+        );
+      }
+
+      if (data.totals) {
+        const t = data.totals;
+        await this.prisma.taxCouponAiTotals.create({
+          data: {
+            taxCouponAiId: aiRecord.id,
+            totalItems: t.total_items,
+            subtotal: t.subtotal,
+            total: t.total,
+            paymentMethod: t.payment_method,
+          },
+        });
+      }
+
+      if (data.customer) {
+        const c = data.customer;
+        await this.prisma.taxCouponAiCustomer.create({
+          data: {
+            taxCouponAiId: aiRecord.id,
+            identified: c.identified,
+          },
+        });
+      }
 
       await this.prisma.taxCoupon.update({
         where: { id: taxCouponId },

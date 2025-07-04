@@ -51,7 +51,17 @@ export class TaxCouponService {
       return await this.prisma.taxCoupon.findUnique({
         where: { id },
         include: {
-          ai: { orderBy: { createdAt: 'desc' }, take: 1 },
+          ai: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+            include: {
+              establishment: true,
+              document: true,
+              items: true,
+              totals: true,
+              customer: true,
+            },
+          },
         },
       });
     } catch (error) {
