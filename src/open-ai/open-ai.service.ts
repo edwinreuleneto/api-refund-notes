@@ -1,4 +1,10 @@
-import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { Worker, Job, Queue } from 'bullmq';
 import { OpenAI } from 'openai';
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,6 +14,18 @@ import { TaxCouponStatus } from '@prisma/client';
 interface AiJobData {
   taxCouponId: string;
   fileId: string;
+}
+
+type TextBlock = {
+  type: 'text';
+  text: {
+    value: string;
+    annotations?: unknown[];
+  };
+};
+
+function isTextBlock(block: any): block is TextBlock {
+  return block?.type === 'text' && typeof block.text?.value === 'string';
 }
 
 @Injectable()
@@ -82,13 +100,14 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
       }
 
       const messages = await this.openai.beta.threads.messages.list(thread.id);
-      const resultText =
-        messages.data[messages.data.length - 1]?.content[0]?.text?.value ?? '{}';
+      const lastMessage = messages.data[messages.data.length - 1];
+      const textBlock = lastMessage?.content.find(isTextBlock);
+      const data = textBlock;
 
-      const data = JSON.parse(resultText) as any;
+      // const data = JSON.parse(resultText);
 
       await this.prisma.$transaction(async (tx) => {
-        const aiRecord = await tx.taxCouponAi.create({
+        await tx.taxCouponAi.create({
           data: {
             taxCouponId,
             establishment: data.establishment
@@ -100,7 +119,8 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
                     addressStreet: data.establishment.address?.street,
                     addressNumber: data.establishment.address?.number,
                     addressComplement: data.establishment.address?.complement,
-                    addressNeighborhood: data.establishment.address?.neighborhood,
+                    addressNeighborhood:
+                      data.establishment.address?.neighborhood,
                     addressCity: data.establishment.address?.city,
                     addressState: data.establishment.address?.state,
                     addressPostalCode: data.establishment.address?.postal_code,
@@ -163,8 +183,12 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
           data: { status: TaxCouponStatus.AI_COMPLETED },
         });
       });
-    } catch (error) {
-      this.logger.error('AI processing failed', error as Error);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : JSON.stringify(error ?? 'Unknown error');
+      this.logger.error(`AI processing failed: ${message}`);
       await this.prisma.taxCoupon.update({
         where: { id: taxCouponId },
         data: { status: TaxCouponStatus.FAILED },
