@@ -84,95 +84,84 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
       const messages = await this.openai.beta.threads.messages.list(thread.id);
       const resultText =
         messages.data[messages.data.length - 1]?.content[0]?.text?.value ?? '{}';
-      const data = JSON.parse(resultText);
 
-      const aiRecord = await this.prisma.taxCouponAi.create({
-        data: {
-          taxCouponId,
-        },
-      });
+      const data = JSON.parse(resultText) as any;
 
-      if (data.establishment) {
-        const e = data.establishment;
-        await this.prisma.taxCouponAiEstablishment.create({
+      await this.prisma.$transaction(async (tx) => {
+        const aiRecord = await tx.taxCouponAi.create({
           data: {
-            taxCouponAiId: aiRecord.id,
-            name: e.name,
-            cnpj: e.cnpj,
-            stateRegistration: e.state_registration,
-            addressStreet: e.address?.street,
-            addressNumber: e.address?.number,
-            addressComplement: e.address?.complement,
-            addressNeighborhood: e.address?.neighborhood,
-            addressCity: e.address?.city,
-            addressState: e.address?.state,
-            addressPostalCode: e.address?.postal_code,
+            taxCouponId,
+            establishment: data.establishment
+              ? {
+                  create: {
+                    name: data.establishment.name,
+                    cnpj: data.establishment.cnpj,
+                    stateRegistration: data.establishment.state_registration,
+                    addressStreet: data.establishment.address?.street,
+                    addressNumber: data.establishment.address?.number,
+                    addressComplement: data.establishment.address?.complement,
+                    addressNeighborhood: data.establishment.address?.neighborhood,
+                    addressCity: data.establishment.address?.city,
+                    addressState: data.establishment.address?.state,
+                    addressPostalCode: data.establishment.address?.postal_code,
+                  },
+                }
+              : undefined,
+            document: data.document
+              ? {
+                  create: {
+                    type: data.document.type,
+                    description: data.document.description,
+                    series: data.document.series,
+                    number: data.document.number,
+                    issueDate: data.document.issue_date
+                      ? new Date(data.document.issue_date)
+                      : null,
+                    accessKey: data.document.access_key,
+                    consultUrl: data.document.consult_url,
+                    receiptUrl: data.document.receipt_url,
+                  },
+                }
+              : undefined,
+            totals: data.totals
+              ? {
+                  create: {
+                    totalItems: data.totals.total_items,
+                    subtotal: data.totals.subtotal,
+                    total: data.totals.total,
+                    paymentMethod: data.totals.payment_method,
+                  },
+                }
+              : undefined,
+            customer: data.customer
+              ? {
+                  create: {
+                    identified: data.customer.identified,
+                  },
+                }
+              : undefined,
+            items: Array.isArray(data.items)
+              ? {
+                  createMany: {
+                    data: data.items.map((item: any) => ({
+                      code: item.code,
+                      description: item.description,
+                      quantity: item.quantity,
+                      unit: item.unit,
+                      unitPrice: item.unit_price,
+                      totalPrice: item.total_price,
+                      categorySystem: item.category_system,
+                    })),
+                  },
+                }
+              : undefined,
           },
         });
-      }
 
-      if (data.document) {
-        const d = data.document;
-        await this.prisma.taxCouponAiDocument.create({
-          data: {
-            taxCouponAiId: aiRecord.id,
-            type: d.type,
-            description: d.description,
-            series: d.series,
-            number: d.number,
-            issueDate: d.issue_date ? new Date(d.issue_date) : null,
-            accessKey: d.access_key,
-            consultUrl: d.consult_url,
-            receiptUrl: d.receipt_url,
-          },
+        await tx.taxCoupon.update({
+          where: { id: taxCouponId },
+          data: { status: TaxCouponStatus.AI_COMPLETED },
         });
-      }
-
-      if (Array.isArray(data.items)) {
-        await Promise.all(
-          data.items.map((item: any) =>
-            this.prisma.taxCouponAiItem.create({
-              data: {
-                taxCouponAiId: aiRecord.id,
-                code: item.code,
-                description: item.description,
-                quantity: item.quantity,
-                unit: item.unit,
-                unitPrice: item.unit_price,
-                totalPrice: item.total_price,
-                categorySystem: item.category_system,
-              },
-            }),
-          ),
-        );
-      }
-
-      if (data.totals) {
-        const t = data.totals;
-        await this.prisma.taxCouponAiTotals.create({
-          data: {
-            taxCouponAiId: aiRecord.id,
-            totalItems: t.total_items,
-            subtotal: t.subtotal,
-            total: t.total,
-            paymentMethod: t.payment_method,
-          },
-        });
-      }
-
-      if (data.customer) {
-        const c = data.customer;
-        await this.prisma.taxCouponAiCustomer.create({
-          data: {
-            taxCouponAiId: aiRecord.id,
-            identified: c.identified,
-          },
-        });
-      }
-
-      await this.prisma.taxCoupon.update({
-        where: { id: taxCouponId },
-        data: { status: TaxCouponStatus.AI_COMPLETED },
       });
     } catch (error) {
       this.logger.error('AI processing failed', error as Error);
