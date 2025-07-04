@@ -12,6 +12,7 @@ import { FilesService } from '../files/files.service';
 import { FiscalLookupService } from '../fiscal-lookup/fiscal-lookup.service';
 import { OPEN_AI_QUEUE } from '../queue/queue.module';
 import { TaxCouponStatus } from '@prisma/client';
+import { TaxCouponAiResponse } from './interfaces/tax-coupon-ai-response.interface';
 
 interface AiJobData {
   taxCouponId: string;
@@ -63,168 +64,172 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
   private async process(job: Job<AiJobData>) {
     const { taxCouponId, fileId } = job.data;
     try {
-      await this.prisma.taxCoupon.update({
-        where: { id: taxCouponId },
-        data: { status: TaxCouponStatus.AI_INITIATED },
-      });
+      await this.updateStatus(taxCouponId, TaxCouponStatus.AI_INITIATED);
 
-      const ocr = await this.prisma.filesOcr.findFirst({
-        where: { fileId },
-        orderBy: { createdAt: 'desc' },
-      });
+      const { content, image, extension } = await this.getOcrAndImage(fileId);
+      const prompt = this.buildPrompt(content);
 
-      if (!ocr) {
-        throw new Error('OCR not found');
-      }
-
-      const file = await this.prisma.files.findUnique({
-        where: { id: fileId },
-      });
-      if (!file) {
-        throw new Error('File not found');
-      }
-
-      const buffer = await this.filesService.download(file.folder, file.file);
-      const base64Image = buffer.toString('base64');
-
-      const prompt = `Extract the receipt information as JSON in the following format: { establishment: { name, cnpj, state_registration, address: { street, number, complement, neighborhood, city, state, postal_code } }, document: { type, description, series, number, issue_date, access_key, consult_url, receipt_url }, items: [ { code, description, quantity, unit, unit_price, total_price, category_system } ], totals: { total_items, subtotal, total, payment_method }, customer: { identified } } from the text:\n\n${ocr.content}`;
-
-      const thread = await this.openai.beta.threads.create({
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: prompt },
-              {
-                type: 'image_url',
-                image_url: {
-                  url: `data:image/${file.extension};base64,${base64Image}`,
-                },
-              },
-            ],
-          },
-        ],
-      });
-
-      const run = await this.openai.beta.threads.runs.create(thread.id, {
-        assistant_id: this.assistantId,
-      });
-
-      let runStatus = run;
-      while (
-        runStatus.status === 'queued' ||
-        runStatus.status === 'in_progress'
-      ) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        runStatus = await this.openai.beta.threads.runs.retrieve(
-          thread.id,
-          run.id,
-        );
-      }
+      const thread = await this.createThread(prompt, extension, image);
+      const run = await this.startRun(thread.id);
+      const runStatus = await this.waitForCompletion(thread.id, run.id);
 
       if (runStatus.status !== 'completed') {
         throw new Error('Assistant run failed');
       }
 
-      const messages = await this.openai.beta.threads.messages.list(thread.id);
-      const lastMessage = messages.data[messages.data.length - 1];
-      console.log('lastMessage', lastMessage);
-
-      const data = JSON.parse(lastMessage.content[0].text.text.value);
-
-      console.log('data', data);
-
-      await this.prisma.$transaction(async (tx) => {
-        await tx.taxCouponAi.create({
-          data: {
-            taxCouponId,
-            establishment: data.establishment
-              ? {
-                  create: {
-                    name: data.establishment.name,
-                    cnpj: data.establishment.cnpj,
-                    stateRegistration: data.establishment.state_registration,
-                    addressStreet: data.establishment.address?.street,
-                    addressNumber: data.establishment.address?.number,
-                    addressComplement: data.establishment.address?.complement,
-                    addressNeighborhood:
-                      data.establishment.address?.neighborhood,
-                    addressCity: data.establishment.address?.city,
-                    addressState: data.establishment.address?.state,
-                    addressPostalCode: data.establishment.address?.postal_code,
-                  },
-                }
-              : undefined,
-            document: data.document
-              ? {
-                  create: {
-                    type: data.document.type,
-                    description: data.document.description,
-                    series: data.document.series,
-                    number: data.document.number,
-                    issueDate: data.document.issue_date
-                      ? new Date(data.document.issue_date)
-                      : null,
-                    accessKey: data.document.access_key,
-                    consultUrl: data.document.consult_url,
-                    receiptUrl: data.document.receipt_url,
-                  },
-                }
-              : undefined,
-            totals: data.totals
-              ? {
-                  create: {
-                    totalItems: data.totals.total_items,
-                    subtotal: data.totals.subtotal,
-                    total: data.totals.total,
-                    paymentMethod: data.totals.payment_method,
-                  },
-                }
-              : undefined,
-            customer: data.customer
-              ? {
-                  create: {
-                    identified: data.customer.identified,
-                  },
-                }
-              : undefined,
-            items: Array.isArray(data.items)
-              ? {
-                  createMany: {
-                    data: data.items.map((item: any) => ({
-                      code: item.code,
-                      description: item.description,
-                      quantity: item.quantity,
-                      unit: item.unit,
-                      unitPrice: item.unit_price,
-                      totalPrice: item.total_price,
-                      categorySystem: item.category_system,
-                    })),
-                  },
-                }
-              : undefined,
-          },
-        });
-
-        await tx.taxCoupon.update({
-          where: { id: taxCouponId },
-          data: { status: TaxCouponStatus.AI_COMPLETED },
-        });
-      });
-
-      // if (data.document?.access_key) {
-      //   await this.fiscalLookupService.consult(data.document.access_key);
-      // }
+      const data = await this.fetchResponse(thread.id);
+      await this.saveAiData(taxCouponId, data);
     } catch (error: unknown) {
       const message =
         error instanceof Error
           ? error.message
           : JSON.stringify(error ?? 'Unknown error');
       this.logger.error(`AI processing failed: ${message}`);
-      await this.prisma.taxCoupon.update({
-        where: { id: taxCouponId },
-        data: { status: TaxCouponStatus.FAILED },
-      });
+      await this.updateStatus(taxCouponId, TaxCouponStatus.FAILED);
     }
+  }
+
+  private buildPrompt(text: string): string {
+    return `Extract the tax coupon information as JSON in the following format: { establishment: { name, cnpj, state_registration, address: { street, number, complement, neighborhood, city, state, postal_code } }, document: { type, description, series, number, issue_date, access_key, consult_url, receipt_url }, items: [ { code, description, quantity, unit, unit_price, total_price, category_system } ], totals: { total_items, subtotal, total, payment_method }, customer: { identified } } from the text:\n\n${text}`;
+  }
+
+  private async updateStatus(id: string, status: TaxCouponStatus) {
+    await this.prisma.taxCoupon.update({ where: { id }, data: { status } });
+  }
+
+  private async getOcrAndImage(fileId: string) {
+    const ocr = await this.prisma.filesOcr.findFirst({
+      where: { fileId },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!ocr) {
+      throw new Error('OCR not found');
+    }
+
+    const file = await this.prisma.files.findUnique({
+      where: { id: fileId },
+    });
+    if (!file) {
+      throw new Error('File not found');
+    }
+
+    const buffer = await this.filesService.download(file.folder, file.file);
+    return {
+      content: ocr.content,
+      image: buffer.toString('base64'),
+      extension: file.extension,
+    };
+  }
+
+  private async createThread(prompt: string, ext: string, image: string) {
+    return this.openai.beta.threads.create({
+      messages: [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: prompt },
+            {
+              type: 'image_url',
+              image_url: { url: `data:image/${ext};base64,${image}` },
+            },
+          ],
+        },
+      ],
+    });
+  }
+
+  private async startRun(threadId: string) {
+    return this.openai.beta.threads.runs.create(threadId, {
+      assistant_id: this.assistantId,
+    });
+  }
+
+  private async waitForCompletion(threadId: string, runId: string) {
+    let runStatus = await this.openai.beta.threads.runs.retrieve(threadId, runId);
+    while (runStatus.status === 'queued' || runStatus.status === 'in_progress') {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      runStatus = await this.openai.beta.threads.runs.retrieve(threadId, runId);
+    }
+    return runStatus;
+  }
+
+  private async fetchResponse(threadId: string): Promise<TaxCouponAiResponse> {
+    const messages = await this.openai.beta.threads.messages.list(threadId);
+    const lastMessage = messages.data[messages.data.length - 1];
+    const block = lastMessage.content[0];
+    if (!isTextBlock(block)) {
+      throw new Error('Unexpected assistant response');
+    }
+    return JSON.parse(block.text.value) as TaxCouponAiResponse;
+  }
+
+  private async saveAiData(id: string, data: TaxCouponAiResponse) {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.taxCouponAi.create({
+        data: {
+          taxCouponId: id,
+          establishment: {
+            create: {
+              name: data.establishment.name,
+              cnpj: data.establishment.cnpj,
+              stateRegistration: data.establishment.state_registration,
+              addressStreet: data.establishment.address.street,
+              addressNumber: data.establishment.address.number,
+              addressComplement: data.establishment.address.complement,
+              addressNeighborhood: data.establishment.address.neighborhood,
+              addressCity: data.establishment.address.city,
+              addressState: data.establishment.address.state,
+              addressPostalCode: data.establishment.address.postal_code,
+            },
+          },
+          document: {
+            create: {
+              type: data.document.type,
+              description: data.document.description,
+              series: data.document.series,
+              number: data.document.number,
+              issueDate: data.document.issue_date
+                ? new Date(data.document.issue_date)
+                : null,
+              accessKey: data.document.access_key,
+              consultUrl: data.document.consult_url,
+              receiptUrl: data.document.receipt_url,
+            },
+          },
+          totals: {
+            create: {
+              totalItems: data.totals.total_items,
+              subtotal: data.totals.subtotal,
+              total: data.totals.total,
+              paymentMethod: data.totals.payment_method,
+            },
+          },
+          customer: {
+            create: {
+              identified: data.customer.identified,
+            },
+          },
+          items: {
+            createMany: {
+              data: data.items.map((item) => ({
+                code: item.code,
+                description: item.description,
+                quantity: item.quantity,
+                unit: item.unit,
+                unitPrice: item.unit_price,
+                totalPrice: item.total_price,
+                categorySystem: item.category_system,
+              })),
+            },
+          },
+        },
+      });
+
+      await tx.taxCoupon.update({
+        where: { id },
+        data: { status: TaxCouponStatus.AI_COMPLETED },
+      });
+    });
   }
 }
