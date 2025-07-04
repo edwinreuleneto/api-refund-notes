@@ -8,6 +8,8 @@ import {
 import { Worker, Job, Queue } from 'bullmq';
 import { OpenAI } from 'openai';
 import { PrismaService } from '../prisma/prisma.service';
+import { FilesService } from '../files/files.service';
+import { FiscalLookupService } from '../fiscal-lookup/fiscal-lookup.service';
 import { OPEN_AI_QUEUE } from '../queue/queue.module';
 import { TaxCouponStatus } from '@prisma/client';
 
@@ -38,6 +40,8 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(OPEN_AI_QUEUE) private readonly queue: Queue,
+    private readonly filesService: FilesService,
+    private readonly fiscalLookupService: FiscalLookupService,
   ) {
     this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     this.assistantId = process.env.OPENAI_ASSISTANT_ID ?? '';
@@ -73,10 +77,29 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
         throw new Error('OCR not found');
       }
 
+      const file = await this.prisma.files.findUnique({ where: { id: fileId } });
+      if (!file) {
+        throw new Error('File not found');
+      }
+
+      const buffer = await this.filesService.download(file.folder, file.file);
+      const base64Image = buffer.toString('base64');
+
       const prompt = `Extract the receipt information as JSON in the following format: { establishment: { name, cnpj, state_registration, address: { street, number, complement, neighborhood, city, state, postal_code } }, document: { type, description, series, number, issue_date, access_key, consult_url, receipt_url }, items: [ { code, description, quantity, unit, unit_price, total_price, category_system } ], totals: { total_items, subtotal, total, payment_method }, customer: { identified } } from the text:\n\n${ocr.content}`;
 
       const thread = await this.openai.beta.threads.create({
-        messages: [{ role: 'user', content: prompt }],
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              {
+                type: 'image_url',
+                image_url: { url: `data:image/${file.extension};base64,${base64Image}` },
+              },
+            ],
+          },
+        ],
       });
 
       const run = await this.openai.beta.threads.runs.create(thread.id, {
@@ -102,9 +125,8 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
       const messages = await this.openai.beta.threads.messages.list(thread.id);
       const lastMessage = messages.data[messages.data.length - 1];
       const textBlock = lastMessage?.content.find(isTextBlock);
-      const data = textBlock;
-
-      // const data = JSON.parse(resultText);
+      const resultText = textBlock?.text?.value ?? '{}';
+      const data = JSON.parse(resultText);
 
       await this.prisma.$transaction(async (tx) => {
         await tx.taxCouponAi.create({
@@ -183,6 +205,10 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
           data: { status: TaxCouponStatus.AI_COMPLETED },
         });
       });
+
+      if (data.document?.access_key) {
+        await this.fiscalLookupService.consult(data.document.access_key);
+      }
     } catch (error: unknown) {
       const message =
         error instanceof Error
