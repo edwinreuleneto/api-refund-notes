@@ -33,7 +33,7 @@ $ npm install
 
 ### Environment variables
 
-Create a `.env` file with the following entries to enable S3 uploads:
+Create a `.env` file with the following entries:
 
 ```bash
 AWS_ACCESS_KEY_ID=your-access-key
@@ -41,6 +41,13 @@ AWS_SECRET_ACCESS_KEY=your-secret-key
 AWS_ACCESS_BUCKET=your-bucket-name
 AWS_REGION=us-east-1
 S3_FOLDER=cupons
+DATABASE_URL=postgresql://user:pass@localhost:5432/dbname
+OPENAI_API_KEY=your-openai-key
+OPENAI_ASSISTANT_ID=assistant-id
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=yourredispassword
+PORT=3000
 ```
 
 ## Compile and run the project
