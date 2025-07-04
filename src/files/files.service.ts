@@ -7,6 +7,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
 } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Readable } from 'stream';
 
 // DTO
@@ -87,5 +88,16 @@ export class FilesService {
       this.logger.error('Failed to download file', err);
       throw err;
     }
+  }
+
+  async generatePresignedUrl(
+    folder: string,
+    key: string,
+    expiresIn = 3600,
+  ): Promise<string> {
+    const bucket = process.env.AWS_ACCESS_BUCKET ?? 'bucket';
+    const s3Key = `${folder}/${key}`;
+    const command = new GetObjectCommand({ Bucket: bucket, Key: s3Key });
+    return getSignedUrl(this.s3, command, { expiresIn });
   }
 }

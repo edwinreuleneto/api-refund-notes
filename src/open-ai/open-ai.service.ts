@@ -118,9 +118,14 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
       throw new Error('File not found');
     }
 
+    const presigned = await this.filesService.generatePresignedUrl(
+      file.folder,
+      file.file,
+    );
+
     return {
       content: ocr.content,
-      image: file.url,
+      image: presigned,
       extension: file.extension,
     };
   }
