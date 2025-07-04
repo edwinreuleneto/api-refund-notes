@@ -11,7 +11,7 @@ import {
   DetectDocumentTextCommand,
 } from '@aws-sdk/client-textract';
 import { PrismaService } from '../prisma/prisma.service';
-import { TAX_COUPON_QUEUE } from '../queue/queue.module';
+import { TAX_COUPON_QUEUE, OPEN_AI_QUEUE } from '../queue/queue.module';
 import { TaxCouponStatus } from '@prisma/client';
 
 interface ProcessJobData {
@@ -28,6 +28,7 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly prisma: PrismaService,
     @Inject(TAX_COUPON_QUEUE) private readonly queue: Queue,
+    @Inject(OPEN_AI_QUEUE) private readonly aiQueue: Queue,
   ) {
     this.textract = new TextractClient({
       region: process.env.AWS_REGION ?? 'region',
@@ -91,6 +92,11 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
       await this.prisma.taxCoupon.update({
         where: { id: taxCouponId },
         data: { status: TaxCouponStatus.TEXTRACT_COMPLETED },
+      });
+
+      await this.aiQueue.add('process-ai', {
+        taxCouponId,
+        fileId,
       });
     } catch (error) {
       this.logger.error('OCR processing failed', error as Error);
