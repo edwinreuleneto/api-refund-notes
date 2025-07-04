@@ -92,7 +92,7 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
   }
 
   private buildPrompt(text: string): string {
-    return `Extract the tax coupon information as JSON in the following format: { establishment: { name, cnpj, state_registration, address: { street, number, complement, neighborhood, city, state, postal_code } }, document: { type, description, series, number, issue_date, access_key, consult_url, receipt_url }, items: [ { code, description, quantity, unit, unit_price, total_price, category_system } ], totals: { total_items, subtotal, total, payment_method }, customer: { identified } } from the text:\n\n${text}`;
+    return `OCR:\n\n${text}`;
   }
 
   private async updateStatus(id: string, status: TaxCouponStatus) {
@@ -131,7 +131,6 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async createThread(prompt: string, ext: string, image: string) {
-    console.log('image', image);
     return this.openai.beta.threads.create({
       messages: [
         {
@@ -155,25 +154,22 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async waitForCompletion(threadId: string, runId: string) {
-    let runStatus = await this.openai.beta.threads.runs.retrieve(
-      threadId,
-      runId,
-    );
-    while (
-      runStatus.status === 'queued' ||
-      runStatus.status === 'in_progress'
-    ) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      runStatus = await this.openai.beta.threads.runs.retrieve(threadId, runId);
+    while (true) {
+      const runStatus = await this.openai.beta.threads.runs.retrieve(
+        threadId,
+        runId,
+      );
+      this.logger.log(`📊 Status do run: ${runStatus.status}`);
+      if (runStatus.status === 'completed' || runStatus.status === 'failed')
+        return runStatus;
+      await new Promise((res) => setTimeout(res, 1500));
     }
-    return runStatus;
   }
 
   private async fetchResponse(threadId: string): Promise<TaxCouponAiResponse> {
     const messages = await this.openai.beta.threads.messages.list(threadId);
-    const lastMessage = messages.data[messages.data.length - 1];
+    const lastMessage = messages.data[0];
 
-    console.log('lastMessage', lastMessage);
     const block = lastMessage.content[0];
     if (!isTextBlock(block)) {
       throw new Error('Unexpected assistant response');
@@ -182,7 +178,6 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async saveAiData(id: string, data: TaxCouponAiResponse) {
-    console.log('data', data);
     await this.prisma.$transaction(async (tx) => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       await tx.taxCouponAi.create({
