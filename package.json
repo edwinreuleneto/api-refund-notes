@@ -17,7 +17,9 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "deploy": "serverless deploy",
+    "offline": "serverless offline"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.842.0",
@@ -40,7 +42,8 @@
     "openai": "^4.89.0",
     "prisma": "^6.11.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "@vendia/serverless-express": "^4.15.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -68,7 +71,10 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.7.3",
-    "typescript-eslint": "^8.20.0"
+    "typescript-eslint": "^8.20.0",
+    "@types/aws-lambda": "^8.10.119",
+    "serverless": "^3.38.0",
+    "serverless-offline": "^12.0.4"
   },
   "jest": {
     "moduleFileExtensions": [

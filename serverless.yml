@@ -1,0 +1,21 @@
+service: api-refund-notes
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: production
+  memorySize: 512
+  timeout: 30
+  environment:
+    NODE_ENV: production
+
+functions:
+  app:
+    handler: dist/lambda.handler
+    events:
+      - httpApi: '*'
+
+plugins:
+  - serverless-offline
