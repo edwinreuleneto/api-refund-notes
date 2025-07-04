@@ -2,7 +2,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { extname } from 'path';
 import * as crypto from 'crypto';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { Readable } from 'stream';
 
 // DTO
 import { CreateFileDto } from './dto/create-file.dto';
@@ -60,6 +61,26 @@ export class FilesService {
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
       this.logger.error('Failed to upload file', err);
+      throw err;
+    }
+  }
+
+  async download(folder: string, key: string): Promise<Buffer> {
+    try {
+      const bucket = process.env.AWS_ACCESS_BUCKET ?? 'bucket';
+      const s3Key = `${folder}/${key}`;
+      const response = await this.s3.send(
+        new GetObjectCommand({ Bucket: bucket, Key: s3Key })
+      );
+      const stream = response.Body as Readable;
+      const chunks: Buffer[] = [];
+      for await (const chunk of stream) {
+        chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : (chunk as Buffer));
+      }
+      return Buffer.concat(chunks);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error('Failed to download file', err);
       throw err;
     }
   }

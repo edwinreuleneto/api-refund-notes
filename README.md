@@ -44,6 +44,7 @@ S3_FOLDER=cupons
 DATABASE_URL=postgresql://user:pass@localhost:5432/dbname
 OPENAI_API_KEY=your-openai-key
 OPENAI_ASSISTANT_ID=assistant-id
+FISCAL_COUPON_API_URL=https://example.com/consulta
 REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_PASSWORD=yourredispassword
