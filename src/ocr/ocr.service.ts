@@ -31,13 +31,6 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
     @Inject(TAX_COUPON_QUEUE) private readonly queue: Queue,
     @Inject(OPEN_AI_QUEUE) private readonly aiQueue: Queue,
   ) {
-    console.log({
-      region: process.env.AWS_REGION_INTERNAL ?? 'region',
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID_INTERNAL ?? '',
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY_INTERNAL ?? '',
-      },
-    });
     this.textract = new TextractClient({
       region: process.env.AWS_REGION_INTERNAL ?? 'region',
       credentials: {
@@ -62,6 +55,15 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
 
   private async process(job: Job<ProcessJobData>) {
     const { taxCouponId, fileId, categories } = job.data;
+
+    console.log({
+      region: process.env.AWS_REGION_INTERNAL ?? 'region',
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID_INTERNAL ?? '',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY_INTERNAL ?? '',
+      },
+    });
+
     this.logger.verbose(`Starting OCR processing for taxCoupon ${taxCouponId}`);
     try {
       await this.prisma.taxCoupon.update({
@@ -72,6 +74,8 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
       const file = await this.prisma.files.findUnique({
         where: { id: fileId },
       });
+
+      console.log({ file });
       if (!file) {
         throw new Error('File not found');
       }
