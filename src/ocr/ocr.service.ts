@@ -31,6 +31,13 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
     @Inject(TAX_COUPON_QUEUE) private readonly queue: Queue,
     @Inject(OPEN_AI_QUEUE) private readonly aiQueue: Queue,
   ) {
+    console.log({
+      region: process.env.AWS_REGION_INTERNAL ?? 'region',
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID_INTERNAL ?? '',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY_INTERNAL ?? '',
+      },
+    });
     this.textract = new TextractClient({
       region: process.env.AWS_REGION_INTERNAL ?? 'region',
       credentials: {
@@ -83,7 +90,6 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
           .map((b) => b.Text)
           .join('\n') ?? '';
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       await this.prisma.filesOcr.create({
         data: {
           fileId,

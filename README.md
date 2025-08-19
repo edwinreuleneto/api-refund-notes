@@ -46,6 +46,7 @@ OPENAI_API_KEY=your-openai-key
 OPENAI_ASSISTANT_ID=assistant-id
 FISCAL_COUPON_API_URL=https://example.com/consulta
 REDIS_HOST=localhost
+REDIS_USER=name
 REDIS_PORT=6379
 REDIS_PASSWORD=yourredispassword
 PORT=3000
