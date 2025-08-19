@@ -35,14 +35,6 @@ export class FilesService {
       const key = `${crypto.randomUUID()}-${file.originalname}`;
       const s3Key = `${folder}/${key}`;
 
-      console.log({
-        region: process.env.AWS_REGION_INTERNAL ?? 'region',
-        credentials: {
-          accessKeyId: process.env.AWS_ACCESS_KEY_ID_INTERNAL ?? '',
-          secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY_INTERNAL ?? '',
-        },
-      });
-
       await this.s3.send(
         new PutObjectCommand({
           Bucket: bucket,

@@ -56,14 +56,6 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
   private async process(job: Job<ProcessJobData>) {
     const { taxCouponId, fileId, categories } = job.data;
 
-    console.log({
-      region: process.env.AWS_REGION_INTERNAL ?? 'region',
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID_INTERNAL ?? '',
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY_INTERNAL ?? '',
-      },
-    });
-
     this.logger.verbose(`Starting OCR processing for taxCoupon ${taxCouponId}`);
     try {
       await this.prisma.taxCoupon.update({
@@ -81,7 +73,7 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
       }
 
       const bucket = process.env.AWS_ACCESS_BUCKET_INTERNAL ?? 'bucket';
-      const key = `${file.folder}/${file.file}`;
+      const key = `/${file.folder}/${file.file}`;
 
       const response = await this.textract.send(
         new DetectDocumentTextCommand({
