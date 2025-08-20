@@ -27,15 +27,15 @@ export class FilesService {
 
   async upload(file: Express.Multer.File): Promise<CreateFileDto> {
     try {
-      const bucket = process.env.AWS_ACCESS_BUCKET_INTERNAL ?? 'bucket';
-      const folder = process.env.S3_FOLDER ?? 'cupons';
+      const bucket = process.env.AWS_ACCESS_BUCKET_INTERNAL;
+      const folder = process.env.S3_FOLDER ?? '';
       const region = process.env.AWS_REGION_INTERNAL;
       const baseUrl = `https://${bucket}.s3.${region}.amazonaws.com`;
 
       const key = `${crypto.randomUUID()}-${file.originalname}`;
-      const s3Key = `${folder}/${key}`;
+      const s3Key = `${key}`;
 
-      await this.s3.send(
+      const response = await this.s3.send(
         new PutObjectCommand({
           Bucket: bucket,
           Key: s3Key,
@@ -45,6 +45,8 @@ export class FilesService {
           ContentType: file.mimetype,
         }),
       );
+
+      console.log({ response });
 
       const extension = extname(file.originalname).replace('.', '');
       const url = `${baseUrl}/${s3Key}`;

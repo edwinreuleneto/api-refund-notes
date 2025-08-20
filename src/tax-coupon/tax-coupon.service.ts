@@ -25,6 +25,8 @@ export class TaxCouponService {
       const fileData = await this.filesService.upload(file);
       const savedFile = await this.prisma.files.create({ data: fileData });
 
+      console.log({ fileData });
+
       const taxCoupon = await this.prisma.taxCoupon.create({
         data: { fileId: savedFile.id },
       });

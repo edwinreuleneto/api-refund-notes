@@ -73,7 +73,11 @@ export class OcrService implements OnModuleInit, OnModuleDestroy {
       }
 
       const bucket = process.env.AWS_ACCESS_BUCKET_INTERNAL ?? 'bucket';
-      const key = `/${file.folder}/${file.file}`;
+      const key = `${file.file}`;
+
+      console.log({ key });
+      console.log({ bucket });
+      console.log({ region: process.env.AWS_REGION_INTERNAL ?? 'region' });
 
       const response = await this.textract.send(
         new DetectDocumentTextCommand({

@@ -97,9 +97,10 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
   }
 
   private buildPrompt(text: string, categories?: string[]): string {
-    const categoriesText = categories && categories.length
-      ? `\n\nCATEGORIES:\n${categories.join(', ')}`
-      : '';
+    const categoriesText =
+      categories && categories.length
+        ? `\n\nCATEGORIES:\n${categories.join(', ')}`
+        : '';
     return `OCR:\n\n${text}${categoriesText}`;
   }
 
@@ -187,7 +188,6 @@ export class OpenAiService implements OnModuleInit, OnModuleDestroy {
 
   private async saveAiData(id: string, data: TaxCouponAiResponse) {
     await this.prisma.$transaction(async (tx) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
       await tx.taxCouponAi.create({
         data: {
           taxCouponId: id,
