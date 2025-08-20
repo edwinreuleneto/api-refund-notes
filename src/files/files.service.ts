@@ -71,7 +71,7 @@ export class FilesService {
   async download(folder: string, key: string): Promise<Buffer> {
     try {
       const bucket = process.env.AWS_ACCESS_BUCKET_INTERNAL ?? 'bucket';
-      const s3Key = `${folder}/${key}`;
+      const s3Key = `${key}`;
       const response = await this.s3.send(
         new GetObjectCommand({ Bucket: bucket, Key: s3Key }),
       );
@@ -96,7 +96,7 @@ export class FilesService {
     expiresIn = 3600,
   ): Promise<string> {
     const bucket = process.env.AWS_ACCESS_BUCKET_INTERNAL ?? 'bucket';
-    const s3Key = `${folder}/${key}`;
+    const s3Key = `${key}`;
     const command = new GetObjectCommand({ Bucket: bucket, Key: s3Key });
     return getSignedUrl(this.s3, command, { expiresIn });
   }
